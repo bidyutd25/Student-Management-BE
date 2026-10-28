@@ -27,7 +27,7 @@ public class StudentController : ControllerBase
         [FromQuery] string? name = null,
         [FromQuery] string? email = null,
         [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 1,
+        [FromQuery] int pageSize = 10,
         [FromQuery] string sortBy = "Id",
         [FromQuery] string sortOrder = "asc",
         CancellationToken cancellationToken = default)

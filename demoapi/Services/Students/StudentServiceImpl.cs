@@ -3,7 +3,7 @@ using demoapi.Data;
 using demoapi.Data.Helpers;
 using demoapi.Dtos.Students;
 using demoapi.Models;
-using demoapi.Services;
+using demoapi.Services.Scorecards;
 using Microsoft.EntityFrameworkCore;
 
 namespace demoapi.Services.Students;
@@ -48,7 +48,7 @@ public class StudentServiceImpl : IStudentService
                 : query.OrderBy(s => s.Id)
         };
 
-        return await query
+        var page = await query
             .Select(s => new StudentDto(
                 s.Id,
                 s.Name,
@@ -56,6 +56,33 @@ public class StudentServiceImpl : IStudentService
                 s.DateOfBirth,
                 s.Enrollments.Count(e => e.Status == EnrollmentStatus.Active)))
             .ToPagedResponseAsync(pageNumber, pageSize, ct);
+        var overall = await LoadOverallScoresAsync(page.Data.Select(s => s.Id).ToList(), ct);
+        return new PagedResponse<StudentDto>
+        {
+            Data = page.Data
+                .Select(s => s with { OverallPercentage = overall.GetValueOrDefault(s.Id) })
+                .ToList(),
+            Pagination = page.Pagination
+        };
+    }
+
+    private async Task<Dictionary<int, decimal?>> LoadOverallScoresAsync(
+        List<int> studentIds, CancellationToken ct)
+    {
+        if (studentIds.Count == 0)
+            return new Dictionary<int, decimal?>();
+
+        var enrollments = await _context.Enrollments
+            .AsNoTracking()
+            .Where(e => studentIds.Contains(e.StudentId) && e.Status != EnrollmentStatus.Dropped)
+            .Include(e => e.Course).ThenInclude(c => c.Assessments)
+            .Include(e => e.Scores)
+            .AsSplitQuery()
+            .ToListAsync(ct);
+
+        return enrollments
+            .GroupBy(e => e.StudentId)
+            .ToDictionary(g => g.Key, g => ScorecardMath.Overall(g));
     }
 
     public async Task<ServiceResult<StudentDto>> GetAsync(int id, CancellationToken ct = default)

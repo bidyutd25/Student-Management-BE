@@ -10,8 +10,7 @@ public sealed class ScoreRequest
     [Range(1, int.MaxValue)]
     public int AssessmentId { get; set; }
 
-    [Range(typeof(decimal), "0", "10000",
-        ParseLimitsInInvariantCulture = true)]
+    [Range(0, 100, ErrorMessage = "Marks must be between 0 and 100.")]
     public decimal MarksObtained { get; set; }
 
     [StringLength(255)]

@@ -38,11 +38,9 @@ namespace demoapi.Services.Scorecards;
 
             // The overall figure only counts courses where every assessment has been scored
             var finished = courses.Where(c => c.IsComplete).ToList();
-            decimal? overall = finished.Count > 0
-                ? Math.Round(finished.Average(c => c.FinalPercentage), 2)
-                : null;
+            var overall = ScorecardMath.Overall(enrollments);
 
-            return ServiceResult<StudentScorecardDto>.Ok(
+        return ServiceResult<StudentScorecardDto>.Ok(
                 new StudentScorecardDto(student.Id, student.Name, courses, overall));
         }
 
@@ -70,6 +68,7 @@ namespace demoapi.Services.Scorecards;
             var assessments = enrollment.Course.Assessments.OrderBy(a => a.Id).ToList();
 
             decimal finalPercentage = 0m;
+            var isComplete = false;
             var rows = new List<AssessmentResultDto>();
 
             foreach (var assessment in assessments)
@@ -93,9 +92,7 @@ namespace demoapi.Services.Scorecards;
                     weighted));
             }
 
-            finalPercentage = Math.Round(finalPercentage, 2);
-
-            var isComplete = rows.Count > 0 && rows.All(r => r.MarksObtained is not null);
+            (finalPercentage, isComplete) = ScorecardMath.Compute(enrollment);
             var grade = isComplete ? GradeCalculator.FromPercentage(finalPercentage) : Pending;
 
             return new CourseResultDto(

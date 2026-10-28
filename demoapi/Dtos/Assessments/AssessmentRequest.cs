@@ -10,11 +10,9 @@ public sealed class AssessmentRequest
     [StringLength(80, MinimumLength = 2)]
     public string Name { get; set; } = string.Empty;
 
-    [Range(typeof(decimal), "0.01", "10000",
-        ParseLimitsInInvariantCulture = true)]
+    [Range(0, 100, ErrorMessage = "Assessment max marks must be between 0 and 100.")]
     public decimal MaxMarks { get; set; }
 
-    [Range(typeof(decimal), "0.01", "100",
-        ParseLimitsInInvariantCulture = true)]
+    [Range(0, 100, ErrorMessage = "Weightage must be between 0 and 100.")]
     public decimal Weightage { get; set; }
 }

@@ -26,4 +26,5 @@ public sealed record StudentDto(
             return age;
         }
     }
+        public decimal? OverallPercentage { get; init; }
 }

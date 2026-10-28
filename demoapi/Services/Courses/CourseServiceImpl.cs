@@ -61,6 +61,9 @@ public class CourseServiceImpl : ICourseService
             IsActive = request.IsActive
         };
 
+        if (CodeEqualsTitle(code, request.Title))
+            return ServiceResult<CourseDto>.BadRequest(CodeEqualsTitleMessage);
+
         _context.Courses.Add(course);
 
         try
@@ -82,6 +85,8 @@ public class CourseServiceImpl : ICourseService
             return ServiceResult<CourseDto>.NotFound("Course not found.");
 
         var code = request.Code.Trim().ToUpperInvariant();
+        if (CodeEqualsTitle(code, request.Title))
+            return ServiceResult<CourseDto>.BadRequest(CodeEqualsTitleMessage);
         if (await _context.Courses.AnyAsync(c => c.Code == code && c.Id != id, ct))
             return ServiceResult<CourseDto>.Conflict($"Course code '{code}' already exists.");
 
@@ -116,6 +121,11 @@ public class CourseServiceImpl : ICourseService
 
         return ServiceResult<bool>.Ok(true);
     }
+
+    private const string CodeEqualsTitleMessage = "Course code and title cannot be the same.";
+
+    private static bool CodeEqualsTitle(string code, string title) =>
+        string.Equals(code.Trim(), title.Trim(), StringComparison.OrdinalIgnoreCase);
 
     private static CourseDto ToDto(CourseEntity c) => new(c.Id, c.Code, c.Title, c.Credits, c.IsActive);
 }
